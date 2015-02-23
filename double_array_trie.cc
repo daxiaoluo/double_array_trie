@@ -40,10 +40,12 @@ bool DoubleArrayTrie::findStr(const string &str) {
 		if(ignore_case)
 		  s = tolower(str[i]);
 		int pre_index = index;
+		assert(base_array[index].val > 0);
 		index = base_array[index].val + dict[s];
-		if(index >= base_array.size() || check_array[index] != pre_index)
+		if(index >= base_array.size() || check_array[index] != pre_index) {	
 			return false;
-		if(i + 1 == str.size()) {
+		}
+		if(i + 1 == str.size()) {	
 			if(base_array[index].isLeaf) // There exsited substring in trie 
 			  return true;
 			else
@@ -89,7 +91,7 @@ void DoubleArrayTrie::insertStr(const string &str) {
 		if(check_array[index] == 0 || (base_array[index].val == 0 && base_array[index].isLeaf)) { //have no conflicts
 			check_array[index] = pre_index;
 			base_array[pre_index].out.insert(s);//save the out edge
-			if(i + 1 == str.size()) { // at string end
+			if((i + 1) == str.size()) { // at string end
 				base_array[index].isLeaf = true;
 			} else {
 				base_array[index].val = -1;
@@ -101,7 +103,7 @@ void DoubleArrayTrie::insertStr(const string &str) {
 				if(i + 1 == str.size()) { // at string end
 					base_array[index].isLeaf = true;
 					break;
-				} else if(base_array[index].val < 0) {
+				} else if(base_array[index].val < 0) {	
 					resolvePrefixConflict(index, str, i + 1); // resolve the same prefix conflicts
 					break;
 				}
@@ -170,7 +172,7 @@ void DoubleArrayTrie::resolvePrefixConflict(int index, const string& str, int st
 	assert(base_array[index].val < 0);
 	assert(base_array.size() == check_array.size());
 	assert(base_array[index].tail != tail_array.end());
-
+	
 	vector<char> prefix; // save the same prefix
 	list<char>::iterator iter = base_array[index].tail;
 	while(str_index < str.size() && *iter != '#') {
@@ -212,7 +214,7 @@ void DoubleArrayTrie::resolvePrefixConflict(int index, const string& str, int st
 		} else {
 			base_array[prefix2_index].val = -1;
 			insertTailArray(prefix2_index, str, str_index + 1);	
-		}
+		}		
 		return;
 	}
 
@@ -234,14 +236,8 @@ void DoubleArrayTrie::resolvePrefixConflict(int index, const string& str, int st
 		if(str_index >= str.size()) {
 			base_array[cur_index].tail = iter;
 		} else {
-			cur_index = getNewBase(cur_index, str[str_index]);
-			str_index++;
-			if(str_index == str.size()) {
-				base_array[cur_index].val = 0;
-				base_array[cur_index].isLeaf = true;
-			} else {
-				insertTailArray(cur_index, str, str_index);
-			}
+			tail_array.erase(iter);
+			insertTailArray(cur_index, str, str_index);	
 		}
 	} else {
 		int prefix1_index = -1;
@@ -263,8 +259,19 @@ void DoubleArrayTrie::resolvePrefixConflict(int index, const string& str, int st
 		if(str_index == str.size()) {
 			base_array[prefix2_index].isLeaf = true;
 		} else {
+			base_array[prefix2_index].val = -1;
 			insertTailArray(prefix2_index, str, str_index);
 		}
+		/*
+		for(list<char>::iterator it = base_array[prefix1_index].tail; *it != '#'; it++) {
+			printf("%c", *it);
+		}
+		printf("\n");
+		for(list<char>::iterator it = base_array[prefix2_index].tail; *it != '#'; it++) {
+			printf("%c", *it);
+		}
+		printf("\n");
+		*/
 	}
 }
 
@@ -305,11 +312,30 @@ void DoubleArrayTrie::getNewBase(int cur_index, char s1, char s2, int &prefix1_i
 	int s2_index = dict[s2];
 	prefix1_index = q + s1_index;
 	prefix2_index = q + s2_index;
-	while(prefix1_index < check_array.size() && check_array[prefix1_index] != 0 && prefix2_index < check_array.size() && check_array[prefix2_index] != 0) {
-		q++;
+	bool flag = true;
+	while(flag) {
+		if(prefix1_index >= check_array.size() && prefix2_index >= check_array.size()) {
+			flag = false;
+			break;
+		} else if(prefix1_index >= check_array.size()) {
+			if(check_array[prefix2_index] == 0) {
+				flag = false;
+				break;
+			}
+		} else if(prefix2_index >= check_array.size()) {
+			if(check_array[prefix1_index] == 0) {
+				flag = false;
+				break;
+			}
+		} else if(check_array[prefix1_index] == 0 && check_array[prefix2_index] == 0) {
+			flag = false;
+			break;
+		}
+		q++;  
 		prefix1_index = q + s1_index;
 		prefix2_index = q + s2_index;
 	}
+
 	int max_index = prefix1_index >= prefix2_index ? prefix1_index : prefix2_index;
 	if(max_index >= check_array.size()) {
 		BaseItem item(this->tail_array);
@@ -377,7 +403,7 @@ void DoubleArrayTrie::getNewBase(int cur_index, char s, bool isAdded) {
 		check_array[index] = cur_index;
 		if(base_array[cur_index].val <= 0) {
 			printf("%c\n", *iter);
-			printf("base val: %d, isleaf: %d, out: %d, tail: %d\n", base_array[cur_index].val, base_array[cur_index].isLeaf, base_array[cur_index].out.size(), base_array[cur_index].tail != tail_array.end());
+			printf("base val: %d, isleaf: %d, out: %lu, tail: %d\n", base_array[cur_index].val, base_array[cur_index].isLeaf, base_array[cur_index].out.size(), base_array[cur_index].tail != tail_array.end());
 			printf("check array: %d\n", check_array[cur_index]);
 		}
 		assert(base_array[cur_index].val > 0);
@@ -399,7 +425,6 @@ void DoubleArrayTrie::getNewBase(int cur_index, char s, bool isAdded) {
 			}
 			base_array[old_index].out.clear();
 		}
-		base_array[index].val = base_array[old_index].val;
 		base_array[old_index].val = 0;
 		base_array[old_index].tail = tail_array.end();
 		base_array[old_index].isLeaf = false;
@@ -472,10 +497,10 @@ bool DoubleArrayTrie::isEmptyTail() {
 
 bool DoubleArrayTrie::isEmptyTrie() {
 	assert(base_array.size() == check_array.size());
-	if(base_array.size() == 1) {
+	if(base_array.size() == 2) {
 		assert(tail_array.empty());
 	}
-	return base_array.size() == 1;
+	return base_array.size() == 2;
 }
 
 bool DoubleArrayTrie::compareStr(int str_index, const string& str, int index) {
