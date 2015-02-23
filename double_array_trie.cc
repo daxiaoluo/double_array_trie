@@ -1,6 +1,8 @@
-#include "double_array_trie.h"
 #include <cctype>
 #include <cassert>
+#include <cmath>
+#include <climits>
+#include "double_array_trie.h"
 
 DoubleArrayTrie::DoubleArrayTrie(bool ignore_case) {
 	this->ignore_case = ignore_case;
@@ -102,7 +104,7 @@ void DoubleArrayTrie::insertStr(const string &str) {
 					break;
 				}
 			} else { // resolve the base conflicts
-				resolveBaseConflict(pre_index, check_array[index]);
+				resolveBaseConflict(pre_index, check_array[index], index, i, str);
 				break;
 			}
 		}
@@ -130,27 +132,36 @@ void DoubleArrayTrie::storeTailHead(int index, char item) {
 	}
 }
 
-bool DoubleArrayTrie::resolveBaseConflict(int base_index, int check_index) {
+void DoubleArrayTrie::resolveBaseConflict(int pre_index, int old_base_index, int check_index, int str_index, const string& str) {
 	assert(base_array.size() == check_array.size());
-	assert(base_index < base_array.size());
-	assert(check_index < base_array.size());
+	assert(pre_index < base_array.size() && pre_index > 0);
+	assert(old_base_index < base_array.size() && old_base_index > 0);
+	assert(check_index < base_array.size() && check_index > 0);
+	assert(str_index < str.size() && str_index >= 0);
 
-	int index = base_array[base_index].out.size() + 1 <= base_array[check_index].out.size() ? base_index : check_index;
-
-	int q = 1;
-	bool flag = true;
-	while(flag) {
-		flag = false;
-		for(vector<char>::iterator v_iter = base_array[index].out.begin(); v_iter != base_array[index].out.end(); v_iter++) {
-			int cur_index = q + dict[*v_iter];
-			if(cur_index < check_array.size() && check_array[cur_index] != 0)
-			  flag = true;
-		}
-		q++;
+	char s = str[str_index];
+	if(ignore_case) {
+		s = tolower(s);
 	}
+	assert(dict.find(s) != dict.end());
+	int index = (base_array[pre_index].out.size() + 1) <= base_array[old_base_index].out.size() ? pre_index : old_base_index;
 
-	base_array[index].val = q;
-	return false;
+	getNewBase(index, s, (index == pre_index));
+	check_array[check_index] = pre_index;
+
+	base_array[pre_index].out.push_back(s);
+	int new_index = base_array[pre_index].val + dict[s];
+	assert(new_index < base_array.size());
+	assert(base_array.size() == check_array.size());
+	check_array[new_index] = pre_index;
+	if((str_index + 1) == str.size()) {
+		base_array[new_index].isLeaf = true;
+	} else {
+		base_array[new_index].val = -1;
+		storeTailHead(new_index, str[str_index + 1]);
+		insertTailArray(new_index, str, str_index + 2);
+	}
+	
 }
 
 void DoubleArrayTrie::resolvePrefixConflict(int index, const string& str, int str_index) {
@@ -283,10 +294,135 @@ void DoubleArrayTrie::getNewBase(int cur_index, char s1, char s2, int &prefix1_i
 	check_array[prefix2_index] = cur_index;
 }
 
+void DoubleArrayTrie::getNewBase(int cur_index, char s, bool isAdded) {
+	assert(base_array.size() == check_array.size());
+	for(vector<char>::iterator iter = base_array[cur_index].out.begin(); iter != base_array[cur_index].out.end(); iter++) {
+		assert(dict.find(s) != dict.end());
+		if(ignore_case) {
+			assert(*iter == tolower(*iter));
+		}
+	}
+	int q = 1;
+	bool flag = false;
+	int capacity = INT_MIN;
+	int index = -1;
+	do{
+		flag = false;
+		capacity = INT_MIN;
+		if(isAdded) {
+			int s_index = dict[s];
+			index = q + s_index;
+			while(index < base_array.size() && check_array[index] != 0) {
+				q++;
+				index = q + s_index;
+			}
+			if(index >= base_array.size()) {
+				capacity = max(capacity, index + 1);
+			}
+		}
+		for(vector<char>::iterator iter = base_array[cur_index].out.begin(); iter != base_array[cur_index].out.end(); iter++) {
+			index = q + dict[*iter];
+			if(index >= base_array.size()) {
+				capacity = max(capacity, index + 1);
+			} else if(check_array[index] != 0) {
+				flag = true;
+				q++;
+				break;
+			}
+		}
+	} while(flag);
+
+	if(capacity != INT_MIN) {
+		assert(check_array.size() == base_array.size());
+		assert(capacity > base_array.size());
+		BaseItem item(this->tail_array);
+		check_array.resize(capacity, 0);
+		base_array.resize(capacity, item);
+	}
+
+	for(vector<char>::iterator iter = base_array[cur_index].out.begin(); iter != base_array[cur_index].out.end(); iter++) {
+		int str_index = dict[*iter];
+		int index = q + str_index;
+		assert(index < base_array.size());
+		check_array[index] = cur_index;
+		assert(base_array[cur_index].val > 0);
+		int old_index = base_array[cur_index].val + str_index;
+		assert(old_index < base_array.size());
+		base_array[index].tail = base_array[old_index].tail;
+		base_array[index].val = base_array[old_index].val;
+		base_array[index].isLeaf = base_array[old_index].isLeaf;
+		assert(base_array[index].out.empty());
+		if(!base_array[old_index].out.empty()) {
+			for(vector<char>::iterator it = base_array[old_index].out.begin(); it != base_array[old_index].out.end(); it++) {
+				base_array[index].out.push_back(*it);
+				if(base_array[old_index].val > 0) { // change the new base
+					assert(dict.find(*it) != dict.end());
+					int old_child_index = base_array[old_index].val + dict[*it];
+					assert(old_child_index < base_array.size());
+					check_array[old_child_index] = index;
+				}
+			}
+			base_array[old_index].out.clear();
+		}
+		base_array[index].val = base_array[old_index].val;
+		base_array[old_index].val = 0;
+		base_array[old_index].tail = tail_array.end();
+		base_array[old_index].isLeaf = false;
+		check_array[old_index] = 0;
+	}
+	base_array[cur_index].val = q;
+}
+
 void DoubleArrayTrie::deleteStr(const string &str) {
+	if(!isLegalStr(str))
+	  return;
+	assert(base_array.size() == check_array.size());
+	int index = 1;
+	int pre_index = 1;
+	for(int i = 0; i < str.size(); i++) {
+		pre_index = index;
+		index = base_array[index].val + dict[str[i]];
+		if(index >= base_array.size() || check_array[index] != pre_index)
+		  return;
+		if(i + 1 == str.size()) {
+			if(base_array[index].isLeaf) {
+				base_array[index].isLeaf = false;
+			}
+		} else if(base_array[index].val < 0){
+			if(compareStr(i + 1, str, index)) {
+				base_array[index].val = 0;
+				check_array[index] = 0;
+				list<char>::iterator iter = base_array[index].tail;
+				while(*iter != '#') {
+					assert(iter != tail_array.end());
+					iter = tail_array.erase(iter);
+				}
+				assert(iter != tail_array.end() && *iter == '#');
+				iter = tail_array.erase(iter);
+			}
+		}
+	}
 }
 
 
 bool DoubleArrayTrie::isEmptyTail() {
 	return tail_array.empty();
+}
+
+bool DoubleArrayTrie::compareStr(int str_index, const string& str, int index) {
+	if(str_index >= str.size())
+	  return false;
+	if(base_array[index].tail == tail_array.end())
+	  return false;
+	list<char>::iterator iter = base_array[index].tail;
+	while(str_index < str.size() && *iter != '#') {
+		assert(iter != tail_array.end());
+		if(str[str_index] != *iter)
+		  break;
+		iter++;
+		str_index++;
+	}
+	if(str_index != str.size() || *iter != '#')
+	  return false;
+	return true;
 }

@@ -26,9 +26,11 @@ private:
 	void storeTailHead(int index, char item);
 	void insertTailArray(int index, const string &str, int str_index);
 	void resolvePrefixConflict(int index, const string& str, int str_index);
-	bool resolveBaseConflict(int base_index, int check_index);
+	void resolveBaseConflict(int pre_index, int old_base_index, int check_index, int str_index, const string& str);
 	int getNewBase(int cur_index, char s);
+	void getNewBase(int cur_index, char s, bool isAdded);
 	void getNewBase(int cur_index, char s1, char s2, int &prefix1_index, int &prefix2_index);
+	bool compareStr(int str_index, const string& str, int index);
 public:
 	DoubleArrayTrie(bool igore_case = true);
 	bool FindStr(const string &str);
