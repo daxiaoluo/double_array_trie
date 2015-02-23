@@ -86,7 +86,7 @@ void DoubleArrayTrie::insertStr(const string &str) {
 			base_array.resize(index + 1, item);
 		}
 
-		if(check_array[index] == 0) { //have no conflicts
+		if(check_array[index] == 0 || (base_array[index].val == 0 && base_array[index].isLeaf)) { //have no conflicts
 			check_array[index] = pre_index;
 			base_array[pre_index].out.insert(s);//save the out edge
 			if(i + 1 == str.size()) { // at string end
@@ -375,6 +375,11 @@ void DoubleArrayTrie::getNewBase(int cur_index, char s, bool isAdded) {
 		int index = q + str_index;
 		assert(index < base_array.size());
 		check_array[index] = cur_index;
+		if(base_array[cur_index].val <= 0) {
+			printf("%c\n", *iter);
+			printf("base val: %d, isleaf: %d, out: %d, tail: %d\n", base_array[cur_index].val, base_array[cur_index].isLeaf, base_array[cur_index].out.size(), base_array[cur_index].tail != tail_array.end());
+			printf("check array: %d\n", check_array[cur_index]);
+		}
 		assert(base_array[cur_index].val > 0);
 		int old_index = base_array[cur_index].val + str_index;
 		assert(old_index < base_array.size());
