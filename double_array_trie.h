@@ -33,7 +33,7 @@ private:
 	bool compareStr(int str_index, const string& str, int index);
 public:
 	DoubleArrayTrie(bool igore_case = true);
-	bool FindStr(const string &str);
+	bool findStr(const string &str);
 	void insertStr(const string &str);
 	void deleteStr(const string &str);
 	bool isEmptyTail();

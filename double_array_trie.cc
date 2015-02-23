@@ -2,6 +2,8 @@
 #include <cassert>
 #include <cmath>
 #include <climits>
+#include <iostream>
+#include <cstdio>
 #include "double_array_trie.h"
 
 DoubleArrayTrie::DoubleArrayTrie(bool ignore_case) {
@@ -28,7 +30,7 @@ bool DoubleArrayTrie::isLegalStr(const string &str) {
 	return true;
 }
 
-bool DoubleArrayTrie::FindStr(const string &str) {
+bool DoubleArrayTrie::findStr(const string &str) {
 	if(!isLegalStr(str))
 	  return false;
 	assert(base_array.size() == check_array.size());
@@ -51,14 +53,15 @@ bool DoubleArrayTrie::FindStr(const string &str) {
 			int k = i + 1;
 			list<char>::iterator iter = base_array[index].tail;
 			while(k < str.size() && *iter != '#') {
-				if(str[k] != *iter)
+				s = str[k];
+				if(ignore_case)
+				  s = tolower(s);
+				if(s != *iter)
 				  return false;
 				k++;
 				iter++;
 				assert(iter != tail_array.end());
-			}
-			if(iter == tail_array.end())
-			  return false;
+			}	
 			if(k >= str.size() && *iter == '#')
 			  return true;
 			return false;
@@ -157,8 +160,7 @@ void DoubleArrayTrie::resolveBaseConflict(int pre_index, int old_base_index, int
 		base_array[new_index].isLeaf = true;
 	} else {
 		base_array[new_index].val = -1;
-		storeTailHead(new_index, str[str_index + 1]);
-		insertTailArray(new_index, str, str_index + 2);
+		insertTailArray(new_index, str, str_index + 1);
 	}
 	
 }
@@ -182,8 +184,37 @@ void DoubleArrayTrie::resolvePrefixConflict(int index, const string& str, int st
 		assert(iter != tail_array.end());
 		str_index++;
 	}
-	if(str_index == str.size() && *iter == '#')
+	if(str_index == str.size() && *iter == '#') // have this word
 	  return;
+
+	//there is no the same prefix
+	if(prefix.empty()) { // extract a char from tail and str
+		int prefix1_index = -1;
+		int prefix2_index = -1;
+		list<char>::iterator liter = base_array[index].tail;
+		assert(liter != tail_array.end());
+		getNewBase(index, *iter, str[str_index], prefix1_index, prefix2_index);
+		assert(prefix1_index != -1 && prefix2_index != -1);
+		//change tail_array for extact a char
+		liter = tail_array.erase(liter);
+		assert(liter != tail_array.end());
+		if(*liter == '#') {
+			tail_array.erase(liter);
+			base_array[prefix1_index].isLeaf = true;
+		} else {
+			base_array[prefix1_index].val = -1;
+			base_array[prefix1_index].tail = liter;
+		}
+		
+		//insert str
+		if((str_index + 1) == str.size()) {
+			base_array[prefix2_index].isLeaf= true;
+		} else {
+			base_array[prefix2_index].val = -1;
+			insertTailArray(prefix2_index, str, str_index + 1);	
+		}
+		return;
+	}
 
 	//resolve the same prefix conflicts
 	list<char>::iterator temp_iter = base_array[index].tail;
