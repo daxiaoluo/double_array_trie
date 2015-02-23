@@ -2,11 +2,12 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <set>
 using namespace std;
 
 struct BaseItem {
 	int val;
-	vector<char> out;
+	set<char> out;
 	bool isLeaf;
 	list<char>::iterator tail;
 	BaseItem(list<char> &tail_list): val(0), isLeaf(false), tail(tail_list.end()) {}

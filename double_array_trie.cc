@@ -86,7 +86,7 @@ void DoubleArrayTrie::insertStr(const string &str) {
 
 		if(check_array[index] == 0) { //have no conflicts
 			check_array[index] = pre_index;
-			base_array[pre_index].out.push_back(s);//save the out edge
+			base_array[pre_index].out.insert(s);//save the out edge
 			if(i + 1 == str.size()) { // at string end
 				base_array[index].isLeaf = true;
 			} else {
@@ -149,7 +149,7 @@ void DoubleArrayTrie::resolveBaseConflict(int pre_index, int old_base_index, int
 	getNewBase(index, s, (index == pre_index));
 	check_array[check_index] = pre_index;
 
-	base_array[pre_index].out.push_back(s);
+	base_array[pre_index].out.insert(s);
 	int new_index = base_array[pre_index].val + dict[s];
 	assert(new_index < base_array.size());
 	assert(base_array.size() == check_array.size());
@@ -257,7 +257,7 @@ int DoubleArrayTrie::getNewBase(int cur_index, char s) {
 	}
 	base_array[cur_index].val = q;
 	base_array[cur_index].tail = tail_array.end();
-	base_array[cur_index].out.push_back(s); //add out edge
+	base_array[cur_index].out.insert(s); //add out edge
 	check_array[prefix_index] = cur_index;
 	return prefix_index;
 }
@@ -288,15 +288,15 @@ void DoubleArrayTrie::getNewBase(int cur_index, char s1, char s2, int &prefix1_i
 	}
 	base_array[cur_index].val = q;
 	base_array[cur_index].tail = tail_array.end();
-	base_array[cur_index].out.push_back(s1);
-	base_array[cur_index].out.push_back(s2);
+	base_array[cur_index].out.insert(s1);
+	base_array[cur_index].out.insert(s2);
 	check_array[prefix1_index] = cur_index;
 	check_array[prefix2_index] = cur_index;
 }
 
 void DoubleArrayTrie::getNewBase(int cur_index, char s, bool isAdded) {
 	assert(base_array.size() == check_array.size());
-	for(vector<char>::iterator iter = base_array[cur_index].out.begin(); iter != base_array[cur_index].out.end(); iter++) {
+	for(set<char>::iterator iter = base_array[cur_index].out.begin(); iter != base_array[cur_index].out.end(); iter++) {
 		assert(dict.find(s) != dict.end());
 		if(ignore_case) {
 			assert(*iter == tolower(*iter));
@@ -320,7 +320,7 @@ void DoubleArrayTrie::getNewBase(int cur_index, char s, bool isAdded) {
 				capacity = max(capacity, index + 1);
 			}
 		}
-		for(vector<char>::iterator iter = base_array[cur_index].out.begin(); iter != base_array[cur_index].out.end(); iter++) {
+		for(set<char>::iterator iter = base_array[cur_index].out.begin(); iter != base_array[cur_index].out.end(); iter++) {
 			index = q + dict[*iter];
 			if(index >= base_array.size()) {
 				capacity = max(capacity, index + 1);
@@ -340,7 +340,7 @@ void DoubleArrayTrie::getNewBase(int cur_index, char s, bool isAdded) {
 		base_array.resize(capacity, item);
 	}
 
-	for(vector<char>::iterator iter = base_array[cur_index].out.begin(); iter != base_array[cur_index].out.end(); iter++) {
+	for(set<char>::iterator iter = base_array[cur_index].out.begin(); iter != base_array[cur_index].out.end(); iter++) {
 		int str_index = dict[*iter];
 		int index = q + str_index;
 		assert(index < base_array.size());
@@ -353,8 +353,8 @@ void DoubleArrayTrie::getNewBase(int cur_index, char s, bool isAdded) {
 		base_array[index].isLeaf = base_array[old_index].isLeaf;
 		assert(base_array[index].out.empty());
 		if(!base_array[old_index].out.empty()) {
-			for(vector<char>::iterator it = base_array[old_index].out.begin(); it != base_array[old_index].out.end(); it++) {
-				base_array[index].out.push_back(*it);
+			for(set<char>::iterator it = base_array[old_index].out.begin(); it != base_array[old_index].out.end(); it++) {
+				base_array[index].out.insert(*it);
 				if(base_array[old_index].val > 0) { // change the new base
 					assert(dict.find(*it) != dict.end());
 					int old_child_index = base_array[old_index].val + dict[*it];
