@@ -42,7 +42,7 @@ bool DoubleArrayTrie::findStr(const string &str) {
 		int pre_index = index;
 		assert(base_array[index].val > 0);
 		index = base_array[index].val + dict[s];
-		if(index >= base_array.size() || check_array[index] != pre_index) {	
+		if(index >= base_array.size() || check_array[index] != pre_index) {		
 			return false;
 		}
 		if(i + 1 == str.size()) {	
@@ -149,15 +149,14 @@ void DoubleArrayTrie::resolveBaseConflict(int pre_index, int old_base_index, int
 	}
 	assert(dict.find(s) != dict.end());
 	int index = (base_array[pre_index].out.size() + 1) <= base_array[old_base_index].out.size() ? pre_index : old_base_index;
-
 	getNewBase(index, s, (index == pre_index));
-	check_array[check_index] = pre_index;
-
 	base_array[pre_index].out.insert(s);
 	int new_index = base_array[pre_index].val + dict[s];
+	
 	assert(new_index < base_array.size());
 	assert(base_array.size() == check_array.size());
 	check_array[new_index] = pre_index;
+	
 	if((str_index + 1) == str.size()) {
 		base_array[new_index].isLeaf = true;
 	} else {
@@ -262,16 +261,6 @@ void DoubleArrayTrie::resolvePrefixConflict(int index, const string& str, int st
 			base_array[prefix2_index].val = -1;
 			insertTailArray(prefix2_index, str, str_index);
 		}
-		/*
-		for(list<char>::iterator it = base_array[prefix1_index].tail; *it != '#'; it++) {
-			printf("%c", *it);
-		}
-		printf("\n");
-		for(list<char>::iterator it = base_array[prefix2_index].tail; *it != '#'; it++) {
-			printf("%c", *it);
-		}
-		printf("\n");
-		*/
 	}
 }
 
@@ -401,11 +390,7 @@ void DoubleArrayTrie::getNewBase(int cur_index, char s, bool isAdded) {
 		int index = q + str_index;
 		assert(index < base_array.size());
 		check_array[index] = cur_index;
-		if(base_array[cur_index].val <= 0) {
-			printf("%c\n", *iter);
-			printf("base val: %d, isleaf: %d, out: %lu, tail: %d\n", base_array[cur_index].val, base_array[cur_index].isLeaf, base_array[cur_index].out.size(), base_array[cur_index].tail != tail_array.end());
-			printf("check array: %d\n", check_array[cur_index]);
-		}
+	
 		assert(base_array[cur_index].val > 0);
 		int old_index = base_array[cur_index].val + str_index;
 		assert(old_index < base_array.size());

@@ -23,8 +23,10 @@ int main(int argc, char *argv[]) {
 	}
 	fin.close();
 	for(set<string>::iterator iter = words.begin(); iter != words.end(); iter++) {
-		printf("%s\n", iter->c_str());
 		double_array_trie.insertStr(*iter);
+	}
+	for(set<string>::iterator iter = words.begin(); iter != words.end(); iter++) {
+		printf("%s\n", iter->c_str());
 		assert(double_array_trie.findStr(*iter));
 	}
 	return 0;
