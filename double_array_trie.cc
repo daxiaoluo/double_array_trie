@@ -434,6 +434,14 @@ bool DoubleArrayTrie::isEmptyTail() {
 	return tail_array.empty();
 }
 
+bool DoubleArrayTrie::isEmptyTrie() {
+	assert(base_array.size() == check_array.size());
+	if(base_array.size() == 1) {
+		assert(tail_array.empty());
+	}
+	return base_array.size() == 1;
+}
+
 bool DoubleArrayTrie::compareStr(int str_index, const string& str, int index) {
 	if(str_index >= str.size())
 	  return false;

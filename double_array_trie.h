@@ -37,6 +37,7 @@ public:
 	void insertStr(const string &str);
 	void deleteStr(const string &str);
 	bool isEmptyTail();
+	bool isEmptyTrie();
 };
 
 #endif
