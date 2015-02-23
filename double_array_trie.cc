@@ -7,7 +7,6 @@
 DoubleArrayTrie::DoubleArrayTrie(bool ignore_case) {
 	this->ignore_case = ignore_case;
 	BaseItem item(this->tail_array);
-	cur = this->tail_array.end();
 	check_array.resize(2, 0);
 	base_array.resize(2, item);
 	base_array[1].val = 1;
@@ -380,18 +379,31 @@ void DoubleArrayTrie::deleteStr(const string &str) {
 	int index = 1;
 	int pre_index = 1;
 	for(int i = 0; i < str.size(); i++) {
+		char s = str[i];
+		if(ignore_case) {
+			s = tolower(s);
+		}
 		pre_index = index;
-		index = base_array[index].val + dict[str[i]];
+		index = base_array[index].val + dict[s];
 		if(index >= base_array.size() || check_array[index] != pre_index)
 		  return;
 		if(i + 1 == str.size()) {
 			if(base_array[index].isLeaf) {
 				base_array[index].isLeaf = false;
+				if(base_array[index].val == 0) {
+					assert(base_array[index].out.empty());
+					assert(base_array[index].tail == tail_array.end());
+					check_array[index] = 0;
+				}
 			}
 		} else if(base_array[index].val < 0){
 			if(compareStr(i + 1, str, index)) {
-				base_array[index].val = 0;
-				check_array[index] = 0;
+				assert(base_array[pre_index].out.find(s) != base_array[pre_index].out.end());
+				if(!base_array[index].isLeaf) {
+					base_array[pre_index].out.erase(s);
+					base_array[index].val = 0;
+					check_array[index] = 0;
+				}
 				list<char>::iterator iter = base_array[index].tail;
 				while(*iter != '#') {
 					assert(iter != tail_array.end());
@@ -401,6 +413,19 @@ void DoubleArrayTrie::deleteStr(const string &str) {
 				iter = tail_array.erase(iter);
 			}
 		}
+	}
+	assert(base_array.size() == check_array.size());
+	int k = -1;
+	for(k = check_array.size() - 1; k >= 0 && check_array[k] == 0; k--) {
+		assert(base_array[k].val == 0);
+		assert(base_array[k].tail == tail_array.end());
+		assert(base_array[k].out.empty());
+		assert(!base_array[k].isLeaf);
+	}
+	if(k > 0) {
+		BaseItem item(this->tail_array);
+		check_array.resize(k + 1, 0);
+		base_array.resize(k + 1, item);
 	}
 }
 
@@ -417,7 +442,11 @@ bool DoubleArrayTrie::compareStr(int str_index, const string& str, int index) {
 	list<char>::iterator iter = base_array[index].tail;
 	while(str_index < str.size() && *iter != '#') {
 		assert(iter != tail_array.end());
-		if(str[str_index] != *iter)
+		char s = str[str_index];
+		if(ignore_case) {
+			s = tolower(s);
+		}
+		if(s != *iter)
 		  break;
 		iter++;
 		str_index++;

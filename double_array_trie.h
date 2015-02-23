@@ -18,7 +18,6 @@ struct BaseItem {
 class DoubleArrayTrie {
 private:
 	bool ignore_case;
-	list<char>::iterator cur;
 	list<char> tail_array;
 	vector<int> check_array;
 	vector<BaseItem> base_array;
