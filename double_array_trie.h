@@ -31,6 +31,7 @@ private:
 	void getNewBase(int cur_index, char s, bool isAdded);
 	void getNewBase(int cur_index, char s1, char s2, int &prefix1_index, int &prefix2_index);
 	bool compareStr(int str_index, const string& str, int index);
+	void clearCheckAndBase(const string& str, int str_index, int index);
 public:
 	DoubleArrayTrie(bool igore_case = true);
 	bool findStr(const string &str);

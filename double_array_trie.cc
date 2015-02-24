@@ -9,7 +9,7 @@
 DoubleArrayTrie::DoubleArrayTrie(bool ignore_case) {
 	this->ignore_case = ignore_case;
 	BaseItem item(this->tail_array);
-	check_array.resize(2, 0);
+	check_array.resize(2, -1);
 	base_array.resize(2, item);
 	base_array[1].val = 1;
 
@@ -42,8 +42,12 @@ bool DoubleArrayTrie::findStr(const string &str) {
 		int pre_index = index;
 		assert(base_array[index].val > 0);
 		index = base_array[index].val + dict[s];
-		assert(base_array[pre_index].out.find(s) != base_array[pre_index].out.end());
 		if(index >= base_array.size() || check_array[index] != pre_index) {		
+			return false;
+		}
+		if(base_array[index].val == 0 && base_array[index].isLeaf && i < str.size() - 1) {
+			assert(base_array[index].out.empty());
+			assert(base_array[index].tail == tail_array.end());
 			return false;
 		}
 		assert(base_array[pre_index].out.find(s) != base_array[pre_index].out.end());
@@ -433,26 +437,25 @@ void DoubleArrayTrie::deleteStr(const string &str) {
 			s = tolower(s);
 		}
 		pre_index = index;
+		assert(base_array[index].val > 0);
 		index = base_array[index].val + dict[s];
 		if(index >= base_array.size() || check_array[index] != pre_index)
 		  return;
+		if(base_array[index].val == 0 && base_array[index].isLeaf && i < str.size() - 1) {
+			assert(base_array[index].out.empty());
+			assert(base_array[index].tail == tail_array.end());
+			return;
+		}
+		assert(base_array[pre_index].out.find(s) != base_array[pre_index].out.end());
 		if(i + 1 == str.size()) {
 			if(base_array[index].isLeaf) {
 				base_array[index].isLeaf = false;
 				if(base_array[index].val == 0) {
-					assert(base_array[index].out.empty());
-					assert(base_array[index].tail == tail_array.end());
-					check_array[index] = 0;
+					clearCheckAndBase(str, i, index);
 				}
 			}
 		} else if(base_array[index].val < 0){
 			if(compareStr(i + 1, str, index)) {
-				assert(base_array[pre_index].out.find(s) != base_array[pre_index].out.end());
-				if(!base_array[index].isLeaf) {
-					base_array[pre_index].out.erase(s);
-					base_array[index].val = 0;
-					check_array[index] = 0;
-				}
 				list<char>::iterator iter = base_array[index].tail;
 				while(*iter != '#') {
 					assert(iter != tail_array.end());
@@ -460,10 +463,47 @@ void DoubleArrayTrie::deleteStr(const string &str) {
 				}
 				assert(iter != tail_array.end() && *iter == '#');
 				iter = tail_array.erase(iter);
+				base_array[index].tail = tail_array.end();
+				if(!base_array[index].isLeaf) {
+					clearCheckAndBase(str, i, index);
+				} else {
+					base_array[index].val = 0;
+				}
+				break;
 			}
 		}
 	}
-	assert(base_array.size() == check_array.size());
+	assert(base_array.size() == check_array.size());	
+}
+
+void DoubleArrayTrie::clearCheckAndBase(const string& str, int str_index, int index) {
+	int pre_index = check_array[index];
+	assert(pre_index != 0);
+	assert(str_index < str.size() && str_index >= 0);
+
+	while(pre_index > 0 && str_index >= 0) {
+		char s = str[str_index];
+		if(ignore_case) {
+			s = tolower(s);
+		}
+		assert(base_array[pre_index].out.find(s) != base_array[pre_index].out.end());
+		
+		if(base_array[index].isLeaf) {
+			break;
+		}
+
+		assert(base_array[index].out.empty());
+		assert(base_array[index].tail == tail_array.end());
+		check_array[index] = 0;
+		base_array[index].val = 0;
+		base_array[pre_index].out.erase(s);
+		if(base_array[pre_index].out.size() > 0) {
+			break;
+		}
+		index = pre_index;
+		pre_index = check_array[pre_index];
+		str_index--;
+	}
 	int k = -1;
 	for(k = check_array.size() - 1; k >= 0 && check_array[k] == 0; k--) {
 		assert(base_array[k].val == 0);
@@ -477,7 +517,6 @@ void DoubleArrayTrie::deleteStr(const string &str) {
 		base_array.resize(k + 1, item);
 	}
 }
-
 
 bool DoubleArrayTrie::isEmptyTail() {
 	return tail_array.empty();
