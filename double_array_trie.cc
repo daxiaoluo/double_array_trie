@@ -42,9 +42,11 @@ bool DoubleArrayTrie::findStr(const string &str) {
 		int pre_index = index;
 		assert(base_array[index].val > 0);
 		index = base_array[index].val + dict[s];
+		assert(base_array[pre_index].out.find(s) != base_array[pre_index].out.end());
 		if(index >= base_array.size() || check_array[index] != pre_index) {		
 			return false;
 		}
+		assert(base_array[pre_index].out.find(s) != base_array[pre_index].out.end());
 		if(i + 1 == str.size()) {	
 			if(base_array[index].isLeaf) // There exsited substring in trie 
 			  return true;
@@ -88,9 +90,9 @@ void DoubleArrayTrie::insertStr(const string &str) {
 			base_array.resize(index + 1, item);
 		}
 
-		if(check_array[index] == 0 || (base_array[index].val == 0 && base_array[index].isLeaf)) { //have no conflicts
+		if(check_array[index] == 0 || (base_array[index].val == 0 && base_array[index].isLeaf && check_array[index] == pre_index)) { //have no conflicts
 			check_array[index] = pre_index;
-			base_array[pre_index].out.insert(s);//save the out edge
+			base_array[pre_index].out.insert(s);//save the out edge	
 			if((i + 1) == str.size()) { // at string end
 				base_array[index].isLeaf = true;
 			} else {
@@ -147,6 +149,7 @@ void DoubleArrayTrie::resolveBaseConflict(int pre_index, int old_base_index, int
 	if(ignore_case) {
 		s = tolower(s);
 	}
+
 	assert(dict.find(s) != dict.end());
 	int index = (base_array[pre_index].out.size() + 1) <= base_array[old_base_index].out.size() ? pre_index : old_base_index;
 	getNewBase(index, s, (index == pre_index));
